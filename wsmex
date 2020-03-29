@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+
+folder="/tmp/wsm/command/"
+
+case $1 in
+    create) touch $folder"create";;
+    reload) touch $folder"reload";;
+    group) touch $folder"create_group";;
+    colour) echo $2 > $folder"group_colour";;
+    groupchangeleft) touch $folder"change_group_left";;
+    groupchangeright) touch $folder"change_group_right";;
+    focusleft) touch $folder"focus_left";;
+    focusright) touch $folder"focus_right";;
+    groupfocusleft) touch $folder"focus_group_left";;
+    groupfocusright) touch $folder"focus_group_right";;
+    moveleft) touch $folder"move_left";;
+    moveright) touch $folder"move_right";;
+    groupmoveleft) touch $folder"move_group_left";;
+    groupmoveright) touch $folder"move_group_right";;
+    delete) touch $folder"delete";;
+    lock) echo $2 > $folder"lock";;
+    unlock) touch $folder"manual_unlock";;
+    fullunlock) touch $folder"hard_unlock";;
+    *) exit 2;;
+esac
