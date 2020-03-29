@@ -8,12 +8,14 @@ from time import sleep
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-config_location = "~/.config/wsm/wsmrc"
+config_location = "/home/olaf/.config/wsm/wsmrc"
+
+with open(config_location, "r") as configuration:
+    config = yaml.load(configuration, Loader=yaml.FullLoader)
+
 
 def main():
 
-    with open(config_location, "r") as configuration:
-        config = yaml.load(configuration)
     try:
         os.mkdir(config["tmp_folder"])
     except:
@@ -52,6 +54,7 @@ class CommandHandler(FileSystemEventHandler):
             command("rm {}*".format(config["command_folder"]))
         except:
             pass
+        self.displaygen()
 
     def on_created(self, event):
         command = event.src_path[len(config["command_folder"]):]
@@ -99,7 +102,7 @@ class CommandHandler(FileSystemEventHandler):
         self.unlock()
 
     def create(self, name=None):
-        names = workspace_names.copy()
+        names = config["workspace_names"].copy()
         if name==None:
             for group in self.groups:
                 for ws in group.workspaces:
