@@ -8,7 +8,7 @@ from time import sleep
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-config_location = "/home/olaf/.config/wsm/wsmrc"
+config_location = os.path.expanduser("~/.config/wsm/wsmrc")
 
 with open(config_location, "r") as configuration:
     config = yaml.load(configuration, Loader=yaml.FullLoader)
