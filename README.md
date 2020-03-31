@@ -25,11 +25,13 @@ Okay, so I'm using bspwm as my window manager, combined with sxhkd. I use polyba
 The display of this application is made to suit that, it writes the output in a `/tmp/wsm/output`, where Polybar can read it out with a simple `tail -F` command. 
 
 I have also supplied wsmex, which is the executable file in my `/usr/bin/`. It is not very exciting, it's just an easy method of sending commands to the wsm-instance. This is usually activated by a key-combination in my sxhkd.
-The configuration of wsm are, again, not extremely imaginative, in `~/.config/wsm/wsmrc`. It is in yaml-format, and it requires:
-- defaultfg, the default foreground colour of the displayed workspace. It automatically derives other shades from this colour.
-- command_folder, a sensible location would be `/tmp/wsm/command/`
-- tmp_folder, in a similar way I'd suggest `/tmp/wsm/`
-- workspace_names. This is a list of letters, icons, or whatever you want, which it will use to name new workspaces. I use greek letters for this, but you can choose anything you like.
+The configuration of wsm are, again, not extremely imaginative, in `~/.config/wsm/wsmrc`. I provided a usable example,`wsmrc_example`. It is in yaml-format, and it requires:
+- `defaultfg`, the default foreground colour of the displayed workspace. It automatically derives other shades from this colour.
+- `command_folder`, a sensible location would be `/tmp/wsm/command/`
+- `tmp_folder`, in a similar way I'd suggest `/tmp/wsm/`
+- `workspace_names`. This is a list of letters, icons, or whatever you want, which it will use to name new workspaces. I use greek letters for this, but you can choose anything you like.
+
+
 
 Do take note that you have to make sure the folders, and the configuration file, exist. I do this by including a couple of lines in my bspwmrc, since I always load the prior to starting this application.
 I would like to have it auto-generate a config file when none is present, and check everything nicely, with sensible errors. However, time is limited, and it has a low priority for me, so I don't know if i'll ever come to it. 
