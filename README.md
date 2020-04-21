@@ -35,3 +35,10 @@ The configuration of wsm are, again, not extremely imaginative, in `~/.config/ws
 
 Do take note that you have to make sure the folders, and the configuration file, exist. I do this by including a couple of lines in my bspwmrc, since I always load the prior to starting this application.
 I would like to have it auto-generate a config file when none is present, and check everything nicely, with sensible errors. However, time is limited, and it has a low priority for me, so I don't know if i'll ever come to it. 
+
+Dependencies
+============
+
+- Python. (Tested on Python 3.8, others probably work too.)
+- Watchdog
+- Python-watchdog
