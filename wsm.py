@@ -212,7 +212,7 @@ class CommandHandler(FileSystemEventHandler):
             group_list["workspaces"] = []
             group_list["locked"] = 0
             for workspace in group.workspaces:
-                windower = command("bspc query -d focused -N").split("\n")
+                windower = command("bspc query -d " + str(workspace) + " -N").split("\n")
                 windows = [window.strip() for window in windower[:-1]]
                 group_list["workspaces"].append((
                     str(workspace), 
@@ -269,6 +269,10 @@ class CommandHandler(FileSystemEventHandler):
                     self.create(name=workspace[0])
                 if workspace[1]:
                     actws = self.activegroup.active
+                print(workspace)
+                for window in workspace[2]:
+                    command("bspc node " + window + " -d " + workspace[0])
+                    print(window)
             self.activegroup.active = actws
             command("bspc desktop -f " + actws)
             if int(group["locked"]) != 0:
