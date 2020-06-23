@@ -97,8 +97,8 @@ class CommandHandler(FileSystemEventHandler):
         else:
             pass
         os.remove(config["command_folder"] + command)
-        self.save_state()
         self.unlock()
+        self.save_state()
         self.displaygen()
 
     def create(self, name=None):
