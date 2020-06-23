@@ -96,10 +96,10 @@ class CommandHandler(FileSystemEventHandler):
             self.save_state()
         else:
             pass
-        self.displaygen()
         os.remove(config["command_folder"] + command)
         self.save_state()
         self.unlock()
+        self.displaygen()
 
     def create(self, name=None):
         names = config["workspace_names"].copy()
