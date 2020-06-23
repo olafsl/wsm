@@ -271,7 +271,6 @@ class CommandHandler(FileSystemEventHandler):
                     actws = self.activegroup.active
                 for window in workspace[2]:
                     command("bspc node " + window + " -d " + workspace[0])
-                    print(window)
             self.activegroup.active = actws
             command("bspc desktop -f " + actws)
             if int(group["locked"]) != 0:
