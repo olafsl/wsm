@@ -269,7 +269,6 @@ class CommandHandler(FileSystemEventHandler):
                     self.create(name=workspace[0])
                 if workspace[1]:
                     actws = self.activegroup.active
-                print(workspace)
                 for window in workspace[2]:
                     command("bspc node " + window + " -d " + workspace[0])
                     print(window)
