@@ -46,22 +46,15 @@ class CommandHandler(FileSystemEventHandler):
         except:
             self.display = ""
             self.groups = []
-            newgroup = Group()
-            self.groups.append(newgroup)
-            self.activegroup = self.groups[0]
-            workspaces = command("bspc query -D --names").strip().split("\n")
-            self.activegroup.workspaces = [workspace for workspace in workspaces]
-            monitors = command("bspc query -M --names").strip().split("\n")
             self.monitors = {}
-            self.monitors[monitors[0]] = []
-            self.monitors[monitors[0]].append(self.activegroup)
-            if len(monitors) > 1:
-                for monitor in monitors[1:]:
-                    self.create()
-                    command("bspc desktop -m " + monitor)
-                    self.create_group()
-                    self.monitors[monitor] = [].append(self.activegroup)
-            
+            monitors = command("bspc query -M --names").strip().split("\n")
+            for monitor in monitors:
+                self.monitors[monitor] = []
+                workspaces = command("bspc query -D -m " + monitor + " --names").strip().split("\n")
+                command("bspc desktop -f " + workspaces[0])
+                self.groups.append(Group())
+                self.activegroup = self.groups[-1]
+                self.activegroup.workspaces = [workspace for workspace in workspaces]
         try:
             command("rm {}*".format(config["command_folder"]))
         except:
@@ -69,7 +62,7 @@ class CommandHandler(FileSystemEventHandler):
         self.displaygen()
 
     def activemonitor(self):
-        return command("bspc query -M focused --names").strip()
+        return command("bspc query -m focused -M --names").strip()
 
     def on_created(self, event):
         command = event.src_path[len(config["command_folder"]):]
@@ -352,7 +345,6 @@ class CommandHandler(FileSystemEventHandler):
                     backcol = col.change_hue(-0.8)
                 else:
                     col = groupcolour
-                    backcol = col.change_hue(-0.8)
                 if group.active == ws:
                     string += colour(col, backcol, " " + str(ws) + " ")
                 else:
