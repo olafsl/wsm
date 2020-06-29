@@ -40,6 +40,7 @@ class CommandHandler(FileSystemEventHandler):
         super().__init__()
         self.locked_groups = []
         try:
+            pass
             self.load_state()
             self.displaygen()
         except:
@@ -50,11 +51,25 @@ class CommandHandler(FileSystemEventHandler):
             self.activegroup = self.groups[0]
             workspaces = command("bspc query -D --names").strip().split("\n")
             self.activegroup.workspaces = [workspace for workspace in workspaces]
+            monitors = command("bspc query -M --names").strip().split("\n")
+            self.monitors = {}
+            self.monitors[monitors[0]] = []
+            self.monitors[monitors[0]].append(self.activegroup)
+            if len(monitors) > 1:
+                for monitor in monitors[1:]:
+                    self.create()
+                    command("bspc desktop -m " + monitor)
+                    self.create_group()
+                    self.monitors[monitor] = [].append(self.activegroup)
+            
         try:
             command("rm {}*".format(config["command_folder"]))
         except:
             pass
         self.displaygen()
+
+    def activemonitor(self):
+        return command("bspc query -M focused --names").strip()
 
     def on_created(self, event):
         command = event.src_path[len(config["command_folder"]):]
@@ -138,12 +153,16 @@ class CommandHandler(FileSystemEventHandler):
             self.activegroup = newgroup
             self.activegroup.workspaces.append(ws)
             self.activegroup.active = ws
+        self.monitors[self.activemonitor()].append(newgroup)
 
     def delete(self):
         windows = command("bspc query -d focused -N").strip().split("\n")
         for window in windows:
             command("bspc node {} -c".format(window))
+
         if len(self.activegroup.workspaces) == 1:
+            if len(self.monitors[self.activemonitor()]) == 1: 
+                return
             self.groups.remove(self.activegroup)
             self.activegroup = self.groups[0]
         ws = command("bspc query -d focused -D --names").strip()
@@ -211,6 +230,9 @@ class CommandHandler(FileSystemEventHandler):
             group_list["colour"] = str(group.colour)
             group_list["workspaces"] = []
             group_list["locked"] = 0
+            for monitor in self.monitors:
+                if group in self.monitors[monitor]:
+                    group_list["monitor"] = monitor
             for workspace in group.workspaces:
                 windower = command("bspc query -d " + str(workspace) + " -N").split("\n")
                 windows = [window.strip() for window in windower[:-1]]
@@ -235,11 +257,16 @@ class CommandHandler(FileSystemEventHandler):
                     windows
                     ))
             save_dict.append(group_list)
+            
 
         with open(os.path.join(config["tmp_folder"], "wsm.save"), "w") as f:
             yaml.dump(save_dict, f)
 
     def load_state(self):
+        self.monitors = {}
+        monitors = command("bspc query -M --names").strip().split("\n")
+        for monitor in monitors:
+            self.monitors[monitor] = []
         self.groups = []
         self.activegroup = None
         with open(config["tmp_folder"] + "wsm.save") as saved_session_raw:
@@ -278,6 +305,10 @@ class CommandHandler(FileSystemEventHandler):
                 self.locked_groups.append(self.activegroup)
                 self.groups.remove(self.activegroup)
                 self.focus_group(1)
+            if group["monitor"] in monitors:
+                self.monitors[monitor].append(self.activegroup)
+            else:
+                self.monitors[monitors[0]].append(self.activegroup)
 
         for ws in curr_ws:
             command("bspc desktop " + ws + " -r")
@@ -286,6 +317,12 @@ class CommandHandler(FileSystemEventHandler):
             command("bspc desktop -f " + self.activegroup.active)
         except:
             pass
+
+        for monitor in self.monitors:
+            if len(monitor) == 0:
+                self.create_group()
+                self.monitors[monitor].append(self.activegroup)
+
         
     def displaygen(self):
         string = ""
@@ -301,18 +338,25 @@ class CommandHandler(FileSystemEventHandler):
                 break
             if group == self.activegroup:
                 groupcolour = group.colour
+                backcol = groupcolour.change_hue(-0.7)
+            elif group in self.monitors[self.activemonitor().strip()]:
+                groupcolour = group.colour.change_hue(-0.8)
+                backcol = groupcolour.change_hue(-0.7)
             else:
                 groupcolour = group.colour.change_hue(-0.8)
+                backcol = RGB("1d2021")
             for ws in group.workspaces:
                 urgency = command("bspc query -d .urgent -D --names")
                 if urgency.strip() == str(ws):
                     col = RGB("fb241d")
+                    backcol = col.change_hue(-0.8)
                 else:
                     col = groupcolour
+                    backcol = col.change_hue(-0.8)
                 if group.active == ws:
-                    string += colour(col, col.change_hue(-0.7), " " + str(ws) + " ")
+                    string += colour(col, backcol, " " + str(ws) + " ")
                 else:
-                    string += colour(col.change_hue(-0.8), col.change_hue(-0.8).change_hue(-0.7), " " + str(ws) + " ")
+                    string += colour(col.change_hue(-0.8), backcol.change_hue(-0.7), " " + str(ws) + " ")
             string += "  "
         string += "    "
         for group in self.locked_groups:
