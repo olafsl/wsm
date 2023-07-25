@@ -13,9 +13,7 @@ config_location = os.path.expanduser("~/.config/wsm/wsmrc")
 with open(config_location, "r") as configuration:
     config = yaml.load(configuration, Loader=yaml.FullLoader)
 
-
 def main():
-
     try:
         os.mkdir(config["tmp_folder"])
     except:
@@ -30,8 +28,9 @@ def main():
     observer.schedule(handler, config["command_folder"])
     observer.start()
     while True:
-        sleep(60)
+        sleep(0.1)
         handler.unlock(tick=True)
+        handler.reload_active_workspace()
         handler.displaygen()
 
 class CommandHandler(FileSystemEventHandler):
@@ -39,22 +38,17 @@ class CommandHandler(FileSystemEventHandler):
         FileSystemEventHandler.__init__(self)
         super().__init__()
         self.locked_groups = []
-        try:
-            pass
-            self.load_state()
-            self.displaygen()
-        except:
-            self.display = ""
-            self.groups = []
-            self.monitors = {}
-            monitors = command("bspc query -M --names").strip().split("\n")
-            for monitor in monitors:
-                self.monitors[monitor] = []
-                workspaces = command("bspc query -D -m " + monitor + " --names").strip().split("\n")
-                command("bspc desktop -f " + workspaces[0])
-                self.groups.append(Group())
-                self.activegroup = self.groups[-1]
-                self.activegroup.workspaces = [workspace for workspace in workspaces]
+        self.display = ""
+        self.groups = []
+        self.monitors = {}
+        monitors = command("bspc query -M --names").strip().split("\n")
+        for monitor in monitors:
+            self.monitors[monitor] = []
+            workspaces = command("bspc query -D -m " + monitor + " --names").strip().split("\n")
+            command("bspc desktop -f " + workspaces[0])
+            self.groups.append(Group())
+            self.activegroup = self.groups[-1]
+            self.activegroup.workspaces = [workspace for workspace in workspaces]
         try:
             command("rm {}*".format(config["command_folder"]))
         except:
@@ -63,6 +57,16 @@ class CommandHandler(FileSystemEventHandler):
 
     def activemonitor(self):
         return command("bspc query -m focused -M --names").strip()
+
+    def reload_active_workspace(self):
+        current_ws = command("bspc query -d focused -D --names").strip()
+        if self.activegroup.active != current_ws:
+            try:
+                self.activegroup = [x for x in self.groups if current_ws in x.workspaces][0]
+                self.activegroup.active = self.activegroup.workspaces[self.activegroup.workspaces.index(current_ws)]
+            except:
+                self.activegroup = self.groups[0]
+                self.activegroup.active = self.active.group.workspaces[0]
 
     def on_created(self, event):
         command = event.src_path[len(config["command_folder"]):]
@@ -106,7 +110,6 @@ class CommandHandler(FileSystemEventHandler):
             pass
         os.remove(config["command_folder"] + command)
         self.unlock()
-        self.save_state()
         self.displaygen()
 
     def create(self, name=None):
@@ -214,108 +217,6 @@ class CommandHandler(FileSystemEventHandler):
         self.activegroup = self.groups[(index+diff)%len(self.groups)]
         self.activegroup.workspaces.append(ws)
         self.activegroup.active = ws
-
-    def save_state(self):
-        save_dict = []
-        for group in self.groups:
-            group_list = {}
-            group_list["active"] = group == self.activegroup
-            group_list["colour"] = str(group.colour)
-            group_list["workspaces"] = []
-            group_list["locked"] = 0
-            for monitor in self.monitors:
-                if group in self.monitors[monitor]:
-                    group_list["monitor"] = monitor
-            for workspace in group.workspaces:
-                windower = command("bspc query -d " + str(workspace) + " -N").split("\n")
-                windows = [window.strip() for window in windower[:-1]]
-                group_list["workspaces"].append((
-                    str(workspace), 
-                    group.active == workspace, 
-                    windows
-                    ))
-            save_dict.append(group_list)
-        for group in self.locked_groups:
-            group_list = {}
-            group_list["active"] = group == self.activegroup
-            group_list["colour"] = str(group.colour)
-            group_list["workspaces"] = []
-            group_list["locked"] = group.lock_counter
-            for workspace in group.workspaces:
-                windower = command("bspc query -d focused -N").split("\n")
-                windows = [window.strip() for window in windower[:-1]]
-                group_list["workspaces"].append((
-                    str(workspace), 
-                    group.active == workspace, 
-                    windows
-                    ))
-            save_dict.append(group_list)
-            
-
-        with open(os.path.join(config["tmp_folder"], "wsm.save"), "w") as f:
-            yaml.dump(save_dict, f)
-
-    def load_state(self):
-        self.monitors = {}
-        monitors = command("bspc query -M --names").strip().split("\n")
-        for monitor in monitors:
-            self.monitors[monitor] = []
-        self.groups = []
-        self.activegroup = None
-        with open(config["tmp_folder"] + "wsm.save") as saved_session_raw:
-            saved_session = yaml.load(saved_session_raw, Loader=yaml.FullLoader)
-        curr_ws = command("bspc query -D --names").strip().split("\n")
-        self.create_group()
-        for group in saved_session:
-            if group["workspaces"] and group["workspaces"][0][0] in curr_ws:
-                command("bspc desktop -f " + group["workspaces"][0][0])
-                self.activegroup.workspaces.append(group["workspaces"][0][0])
-                self.activegroup.active = self.activegroup.workspaces[-1]
-                self.create_group(colour=group["colour"])
-                curr_ws.remove(group["workspaces"][0][0])
-            else:
-                self.create(name=group["workspaces"][0][0])
-                self.create_group(colour=group["colour"])
-            if group["workspaces"][0][1]:
-                actws = self.activegroup.active
-            if group["active"]:
-                actgroup = self.activegroup
-            for workspace in group["workspaces"][1:]:
-                if workspace[0] in curr_ws:
-                    curr_ws.remove(workspace[0])
-                    self.activegroup.workspaces.append(workspace[0])
-                    self.activegroup.active = self.activegroup.workspaces[-1]
-                else:
-                    self.create(name=workspace[0])
-                if workspace[1]:
-                    actws = self.activegroup.active
-                for window in workspace[2]:
-                    command("bspc node " + window + " -d " + workspace[0])
-            self.activegroup.active = actws
-            command("bspc desktop -f " + actws)
-            if int(group["locked"]) != 0:
-                self.lock(time=int(group["locked"]))
-                self.locked_groups.append(self.activegroup)
-                self.groups.remove(self.activegroup)
-                self.focus_group(1)
-            if group["monitor"] in monitors:
-                self.monitors[monitor].append(self.activegroup)
-            else:
-                self.monitors[monitors[0]].append(self.activegroup)
-
-        for ws in curr_ws:
-            command("bspc desktop " + ws + " -r")
-        try:
-            self.activegroup = actgroup
-            command("bspc desktop -f " + self.activegroup.active)
-        except:
-            pass
-
-        for monitor in self.monitors:
-            if len(monitor) == 0:
-                self.create_group()
-                self.monitors[monitor].append(self.activegroup)
-
         
     def displaygen(self):
         string = ""
@@ -394,8 +295,6 @@ class CommandHandler(FileSystemEventHandler):
             if full or lock_group.lock_counter == -1:
                 lock_group.lock_counter = 0
         self.unlock()
-
-        
 
 class Group():
 
