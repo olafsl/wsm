@@ -263,15 +263,12 @@ class CommandHandler(FileSystemEventHandler):
         logfile.close()
         print(self.display, flush=True)
 
-    def lock(self, time=None):
+    def lock(self, time=-1):
         if len(self.groups)==1:
             self.create()
             self.create_group()
             self.focus_group(1)
         gp = self.activegroup
-        if time == None:
-            durfile = open(config["command_folder"] + "lock", "r")
-            time = durfile.read().strip()
         gp.lock_counter = int(time)
         self.focus_group(1) 
         self.locked_groups.append(gp)
